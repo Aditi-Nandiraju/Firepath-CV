@@ -1,0 +1,23 @@
+{
+  "source": "PLACEHOLDER - made-up numbers so the code runs. Replace with the output of detection/measure_detector.py before reporting any result.",
+  "is_placeholder": true,
+  "step_seconds": 5,
+  "fire": {
+    "event_miss_rate": 0.08,
+    "delay_s": [0, 0, 5, 5, 10, 15, 20, 30],
+    "frame_recall": 0.80,
+    "conf_beta": [6.0, 2.0]
+  },
+  "smoke": {
+    "event_miss_rate": 0.20,
+    "delay_s": [5, 10, 15, 20, 30, 45, 60],
+    "frame_recall": 0.60,
+    "conf_beta": [4.0, 3.0]
+  },
+  "false_alarm": {
+    "rate_per_step": 0.01,
+    "conf_beta": [2.5, 4.0],
+    "confuser_zone_fraction": 0.10,
+    "confuser_rate_per_step": 0.25
+  }
+}
