@@ -1,0 +1,10 @@
+               policy  success_rate  fire_casualty_rate  smoke_exposure_s  detour_ratio  evac_time_s  route_flips
+               static         0.878               0.122            10.641         1.000       58.390        0.000
+        threshold@0.5         0.976               0.025            11.143         1.226       72.794        0.506
+       threshold@0.25         0.970               0.030            11.587         1.254       74.598        0.735
+          latched@0.5         0.979               0.021            11.035         1.225       72.218        0.295
+       voting2of3@0.5         0.977               0.023            10.947         1.183       70.766        0.324
+        confidence@40         0.967               0.033             9.530         1.084       65.739        0.143
+ confidence@40+ema0.5         0.957               0.043             9.630         1.056       63.923        0.081
+confidence@160+ema0.5         0.980               0.020            10.446         1.172       70.411        0.245
+               oracle         0.987               0.013             9.609         1.137       68.630        0.089

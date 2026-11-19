@@ -1,0 +1,62 @@
+{
+  "source": "Measured with /home/sagemaker-user/saved/best.pt on /home/sagemaker-user/videos/videos.csv (49 videos)",
+  "is_placeholder": false,
+  "step_seconds": 5.0,
+  "detector_threshold": 0.1,
+  "calibration": {
+    "method": "platt",
+    "a": 1.121124229931377,
+    "b": 0.01970902799509988,
+    "fitted_on": "/home/sagemaker-user/videos/calib.csv"
+  },
+  "fire": {
+    "n_videos": 8,
+    "event_miss_rate": 0.0,
+    "delay_s": [
+      0.5,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "frame_recall": 1.0,
+    "conf_beta": [
+      10.685,
+      3.163
+    ]
+  },
+  "smoke": {
+    "n_videos": 9,
+    "event_miss_rate": 0.0,
+    "delay_s": [
+      0.5,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "frame_recall": 0.9091,
+    "conf_beta": [
+      2.031,
+      0.802
+    ]
+  },
+  "false_alarm": {
+    "n_videos_normal": 15,
+    "n_videos_confuser": 17,
+    "rate_per_step": 0.07778,
+    "conf_beta": [
+      1.513,
+      3.401
+    ],
+    "confuser_zone_fraction": 0.1,
+    "confuser_rate_per_step": 0.49242
+  }
+}

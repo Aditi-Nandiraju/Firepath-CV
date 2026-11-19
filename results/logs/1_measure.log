@@ -1,0 +1,75 @@
+fire      posVideo1.868.avi                        steps=   6 detections=   6
+fire      posVideo10.869.avi                       steps=   2 detections=   2
+fire      posVideo2.871.avi                        steps=   4 detections=   4
+fire      posVideo3.872.avi                        steps=   3 detections=   3
+fire      posVideo5.874.avi                        steps=  17 detections=  17
+fire      posVideo6.875.avi                        steps=   6 detections=   6
+fire      posVideo8.877.avi                        steps=   4 detections=   4
+fire      posVideo9.878.avi                        steps=   5 detections=   5
+smoke     testpos01.817.avi                        steps=   4 detections=   4
+smoke     testpos02.818.avi                        steps=  12 detections=  12
+smoke     testpos04.820.avi                        steps=  16 detections=  16
+smoke     testpos05.821.avi                        steps=  22 detections=   4
+smoke     testpos07.823.avi                        steps=  15 detections=  15
+smoke     testpos08.824.avi                        steps=   5 detections=   5
+smoke     testpos10.826.avi                        steps=  10 detections=  10
+smoke     testpos11.827.avi                        steps=   6 detections=   6
+smoke     testpos13.829.avi                        steps=   4 detections=   4
+confuser  negsVideo1.858.avi                       steps=  38 detections=  24
+confuser  negsVideo10.1072.avi                     steps=   2 detections=   2
+confuser  negsVideo12.1074.avi                     steps=   6 detections=   2
+confuser  negsVideo13.1075.avi                     steps=   3 detections=   1
+confuser  negsVideo15.1078.avi                     steps=   1 detections=   1
+confuser  negsVideo16.1077.avi                     steps=   3 detections=   1
+confuser  negsVideo3.860.avi                       steps=   4 detections=   0
+confuser  negsVideo4.861.avi                       steps=  13 detections=  11
+confuser  negsVideo6.863.avi                       steps=  10 detections=   2
+confuser  negsVideo7.864.avi                       steps=   4 detections=   3
+confuser  negsVideo9.866.avi                       steps=   6 detections=   5
+confuser  testneg01.807.avi                        steps=   2 detections=   0
+confuser  testneg03.809.avi                        steps=   2 detections=   2
+confuser  testneg04.810.avi                        steps=  23 detections=   0
+confuser  testneg06.812.avi                        steps=   2 detections=   1
+confuser  testneg07.813.avi                        steps=   7 detections=   7
+confuser  testneg09.815.avi                        steps=   6 detections=   3
+none      normal_00.avi                            steps=  12 detections=   1
+none      normal_01.avi                            steps=  12 detections=   1
+none      normal_02.avi                            steps=  12 detections=   0
+none      normal_03.avi                            steps=  12 detections=   3
+none      normal_04.avi                            steps=  12 detections=   0
+none      normal_05.avi                            steps=  12 detections=   2
+none      normal_06.avi                            steps=  12 detections=   0
+none      normal_07.avi                            steps=  12 detections=   1
+none      normal_08.avi                            steps=  12 detections=   1
+none      normal_09.avi                            steps=  12 detections=   1
+none      normal_10.avi                            steps=  12 detections=   2
+none      normal_11.avi                            steps=  12 detections=   0
+none      normal_12.avi                            steps=  12 detections=   1
+none      normal_13.avi                            steps=  12 detections=   1
+none      normal_14.avi                            steps=  12 detections=   0
+fire      posVideo11.870.avi                       steps=   3 detections=   3
+fire      posVideo4.873.avi                        steps=  12 detections=  12
+fire      posVideo7.876.avi                        steps=  11 detections=   8
+smoke     testpos03.819.avi                        steps=   5 detections=   5
+smoke     testpos06.822.avi                        steps=   5 detections=   5
+smoke     testpos09.825.avi                        steps=   6 detections=   6
+smoke     testpos12.828.avi                        steps=   3 detections=   3
+confuser  negsVideo11.1073.avi                     steps=   2 detections=   1
+confuser  negsVideo14.1076.avi                     steps=   1 detections=   1
+confuser  negsVideo2.859.avi                       steps=   4 detections=   2
+confuser  negsVideo5.862.avi                       steps=   3 detections=   3
+confuser  negsVideo8.865.avi                       steps=  26 detections=  25
+confuser  testneg02.808.avi                        steps=   9 detections=   4
+confuser  testneg05.811.avi                        steps=   2 detections=   2
+confuser  testneg08.814.avi                        steps=   6 detections=   1
+none      normal_15.avi                            steps=  12 detections=   3
+none      normal_16.avi                            steps=  12 detections=   0
+none      normal_17.avi                            steps=  12 detections=   2
+none      normal_18.avi                            steps=  12 detections=   0
+none      normal_19.avi                            steps=  12 detections=   1
+Calibration (Platt): a=1.121 b=0.020  ECE raw=0.200 -> calibrated=0.203
+
+Wrote configs/detector_errors_measured.json and configs/detector_errors_measured.per_video.csv
+fire   miss rate=0.0%  median delay=0.0s  step recall=100.0%
+smoke  miss rate=0.0%  median delay=0.0s  step recall=90.9%
+false alarms per step: normal=7.78%  fire-like scenes=49.24%
