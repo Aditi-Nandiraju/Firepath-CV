@@ -47,7 +47,7 @@ configs/
   detector_errors_placeholder.json   FAKE numbers, for testing only
   videos_template.csv                how to list your evaluation videos
 results/             example outputs (made with placeholder numbers)
-FirePath_Colab.ipynb step-by-step notebook for Google Colab
+results/notebooks/   notebook used for the SageMaker training and measurement run
 ```
 
 ---
@@ -107,9 +107,10 @@ python -m firepath.experiments --seed0 0 --scenarios 300 --out results_test
 
 ---
 
-## Part A: train the detector and measure its real errors (Colab)
+## Part A: train the detector and measure its real errors (GPU)
 
-Open `FirePath_Colab.ipynb` in Google Colab (Runtime → GPU), or run:
+Run these on a machine with a GPU (the results here were made on SageMaker,
+see `results/notebooks/`):
 
 **1. Get D-Fire** (21,527 images, YOLO format) from the dataset's GitHub page
 (gaiasd/DFireDataset) and unzip it so you have `D-Fire/train/` and `D-Fire/test/`.
