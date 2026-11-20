@@ -1,0 +1,362 @@
+<title>FirePath Live Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: control-room console. Camera feed beside the floor plan, event log underneath. Single dark look by choice. */
+:root{
+  --bg:#0f141a; --panel:#161d25; --raise:#1e2732; --line:#2a3541;
+  --fg:#dde4ec; --muted:#8a98a8;
+  --route:#5cc8ff; --warn:#f5a524; --fire:#ff4d3d; --safe:#3ecf8e;
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--body)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+h1{font-family:var(--display);font-size:1.5rem;margin:0;letter-spacing:-0.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:2px 0 0;font-size:.875rem}
+.pill{font-family:var(--mono);font-size:.78rem;padding:6px 12px;border-radius:999px;border:1px solid currentColor;display:inline-flex;gap:8px;align-items:center;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.ok{color:var(--safe)} .pill.warn{color:var(--warn)} .pill.fire{color:var(--fire);background:rgba(255,77,61,.12)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;display:grid;gap:10px;align-content:start}
+.panel h2{font-family:var(--mono);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;display:flex;justify-content:space-between;gap:8px}
+canvas{width:100%;height:auto;aspect-ratio:16/9;max-width:100%;display:block;border-radius:6px;background:var(--bg)}
+svg{width:100%;height:auto;display:block;max-width:100%}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,.file{font:500 .875rem var(--body);color:var(--fg);background:var(--raise);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer}
+button:hover,.file:hover{border-color:var(--route)}
+button:focus-visible,.file:focus-within{outline:2px solid var(--route);outline-offset:2px}
+.file{position:relative}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.note{color:var(--muted);font-size:.8rem;margin-left:auto}
+.log{font-family:var(--mono);font-size:.8rem;margin:0;padding:0;list-style:none;display:grid;gap:6px;max-height:190px;overflow:auto}
+.log li{display:grid;grid-template-columns:52px 1fr;gap:8px}
+.log time{color:var(--muted);font-variant-numeric:tabular-nums}
+.log .fire{color:var(--fire)} .log .warn{color:var(--warn)} .log .ok{color:var(--safe)} .log .route{color:var(--route)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw{width:18px;height:3px;border-radius:2px;display:inline-block}
+.clock{font-variant-numeric:tabular-nums;color:var(--fg)}
+svg text{font-family:var(--mono)}
+.lbl{fill:var(--muted);font-size:10px}
+.exit{fill:var(--safe);font-size:10px;font-weight:600}
+.dash{animation:march 1s linear infinite}
+@keyframes march{to{stroke-dashoffset:-20}}
+.pulse{animation:pulse 1.2s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dash,.pulse{animation:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>FirePath Live Demo</h1>
+      <p class="sub">A camera spots fire in Room 208 and the evacuation route changes to avoid it.</p>
+    </div>
+    <span id="status" class="pill ok">Monitoring</span>
+  </header>
+
+  <div class="grid">
+    <section class="panel">
+      <h2><span>Camera feed · CAM-08 · Room 208</span><span class="clock" id="clock">00:00</span></h2>
+      <canvas id="feed" width="640" height="360" aria-label="CCTV camera feed of Room 208"></canvas>
+    </section>
+
+    <section class="panel">
+      <h2><span>Floor 2 · evacuation route</span><span id="routeName">→ East exit</span></h2>
+      <svg id="map" viewBox="0 0 600 320" role="img" aria-label="Floor plan with evacuation route">
+        <rect x="40" y="40" width="520" height="240" rx="4" fill="#121920" stroke="#2a3541"/>
+        <g id="rooms"></g>
+        <rect x="40" y="140" width="520" height="40" fill="#141b23" stroke="#2a3541"/>
+        <text x="150" y="164" class="lbl">CORRIDOR</text>
+        <rect id="blocked" x="430" y="140" width="130" height="40" fill="#ff4d3d" opacity="0"/>
+        <rect x="4" y="146" width="36" height="28" rx="3" fill="#123326" stroke="#3ecf8e"/>
+        <text x="22" y="194" class="exit" text-anchor="middle">WEST</text>
+        <text x="22" y="205" class="exit" text-anchor="middle">EXIT</text>
+        <rect x="560" y="146" width="36" height="28" rx="3" fill="#123326" stroke="#3ecf8e"/>
+        <text x="578" y="194" class="exit" text-anchor="middle">EAST</text>
+        <text x="578" y="205" class="exit" text-anchor="middle">EXIT</text>
+        <polyline id="routeA" fill="none" stroke="#5cc8ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 10" class="dash"/>
+        <polyline id="routeB" fill="none" stroke="#5cc8ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 10" class="dash" opacity="0"/>
+        <g id="fireMark" opacity="0">
+          <circle cx="495" cy="232" r="30" fill="#ff4d3d" opacity=".18" class="pulse"/>
+          <path transform="translate(483 208)" d="M12 1c.6 4 5.6 6.4 5.6 12.2A5.6 5.6 0 0 1 6.4 13.4c0-2.8 1.4-4.4 2.8-6 .4 1.8 1.2 3 2.6 3.6.4-3.4-.4-6.6.2-10z" fill="#ff4d3d" stroke="#ffd2a1" stroke-width="1"/>
+          <rect x="437" y="246" width="116" height="30" rx="3" fill="#ff4d3d"/>
+          <text x="495" y="259" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="600">FIRE DETECTED</text>
+          <text x="495" y="271" text-anchor="middle" fill="#ffe3dc" font-size="9" id="confTxt">CAM-08 · 0.91</text>
+        </g>
+        <g id="checkMark" opacity="0">
+          <rect x="445" y="250" width="100" height="20" rx="3" fill="#f5a524"/>
+          <text x="495" y="264" text-anchor="middle" fill="#1a1205" font-size="9" font-weight="600">CHECKING CAM-08</text>
+        </g>
+        <g id="me">
+          <circle r="11" fill="#5cc8ff" opacity=".25"/>
+          <circle r="6" fill="#5cc8ff" stroke="#ffffff" stroke-width="2"/>
+        </g>
+      </svg>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--route)"></i>Current route</span>
+        <span><i class="sw" style="background:var(--fire)"></i>Blocked by fire</span>
+        <span><i class="sw" style="background:var(--safe)"></i>Exit</span>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="controls">
+      <button id="play" type="button">Pause</button>
+      <button id="replay" type="button">Replay</button>
+      <button id="speed" type="button">Speed 1×</button>
+      <label class="file">Use my own CCTV clip<input id="clip" type="file" accept="video/*"></label>
+      <span class="note">Demo only: the detections are scripted, not from the model.</span>
+    </div>
+    <h2><span>Event log</span></h2>
+    <ul class="log" id="log"></ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+
+  // ---------- timeline (seconds) ----------
+  const T = { move: 1, flame: 2, check: 3.5, confirm: 5 };
+  const SPEED = 20;                                  // map px per second
+  const A = [[365, 90], [365, 140], [365, 160], [578, 160]];   // Room 203 -> East exit
+  const along = (p, d) => {
+    for (let i = 1; i < p.length; i++) {
+      const [x0, y0] = p[i - 1], [x1, y1] = p[i], L = Math.hypot(x1 - x0, y1 - y0);
+      if (d <= L) { const k = L ? d / L : 0; return [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k]; }
+      d -= L;
+    }
+    return p[p.length - 1];
+  };
+  const plen = p => p.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - p[i][0], q[1] - p[i][1]), 0);
+  const turn = along(A, (T.confirm - T.move) * SPEED);
+  const B = [turn, [22, 160]];                       // turn around -> West exit
+  const ARRIVE = T.confirm + plen(B) / SPEED;
+
+  const EVENTS = [
+    { t: 0, c: "route", m: "Person in Room 203. Fastest route: corridor → East exit." },
+    { t: T.check, c: "warn", m: "CAM-08 (Room 208): possible fire, confidence 0.62. Checking next frames." },
+    { t: T.confirm, c: "fire", m: "FIRE DETECTED in Room 208, confidence 0.91." },
+    { t: T.confirm, c: "route", m: "East corridor blocked. New route → West exit." },
+    { t: ARRIVE, c: "ok", m: `Reached West exit safely after ${Math.round(ARRIVE)} s.` },
+  ];
+
+  // ---------- floor plan ----------
+  const rooms = $("rooms");
+  [["201", 40, 40], ["202", 170, 40], ["203", 300, 40], ["204", 430, 40],
+   ["205", 40, 180], ["206", 170, 180], ["207", 300, 180], ["208", 430, 180]].forEach(([n, x, y]) => {
+    const r = document.createElementNS(NS, "rect");
+    Object.entries({ x, y, width: 130, height: 100, fill: "#1a222c", stroke: "#2a3541", id: "r" + n })
+      .forEach(([k, v]) => r.setAttribute(k, v));
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", x + 10); t.setAttribute("y", y + 18); t.setAttribute("class", "lbl"); t.textContent = "Room " + n;
+    const cam = document.createElementNS(NS, "circle");
+    cam.setAttribute("cx", x + 118); cam.setAttribute("cy", y + 13); cam.setAttribute("r", 3.5);
+    cam.setAttribute("fill", "#8a98a8"); cam.setAttribute("id", "cam" + n);
+    rooms.append(r, t, cam);
+  });
+  const pts = p => p.map(q => q.join(",")).join(" ");
+
+  // ---------- state ----------
+  let t = 0, playing = true, speed = 1, last = performance.now(), logged = 0;
+  let flames = [], smokes = [], acc = 0, sacc = 0;
+  const video = document.createElement("video");
+  video.muted = true; video.loop = true; video.playsInline = true;
+  let useVideo = false;
+
+  const fmt = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+  const intensity = () => t < T.flame ? 0 : Math.min(1.4, (t - T.flame) / 3.5 + 0.15);
+  const conf = () => t < T.check ? 0 : t < T.confirm ? 0.62 + (t - T.check) / (T.confirm - T.check) * 0.29 : 0.91 + 0.03 * Math.sin(t * 3);
+
+  // ---------- camera feed ----------
+  const cv = $("feed"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  const OX = 430, OY = 278;                          // fire origin in the scene
+  const noise = document.createElement("canvas"); noise.width = 160; noise.height = 90;
+  const nctx = noise.getContext("2d"), nimg = nctx.createImageData(160, 90);
+  const scan = document.createElement("canvas"); scan.width = W; scan.height = H;
+  { const s = scan.getContext("2d"); s.fillStyle = "rgba(0,0,0,0.13)"; for (let y = 0; y < H; y += 3) s.fillRect(0, y, W, 1); }
+
+  function room() {
+    const poly = (c, ...p) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(...p[0]); p.slice(1).forEach(q => ctx.lineTo(...q)); ctx.fill(); };
+    poly("#3d423b", [0, 0], [640, 0], [560, 30], [80, 30]);                 // ceiling
+    const g = ctx.createLinearGradient(0, 30, 0, 230); g.addColorStop(0, "#545a51"); g.addColorStop(1, "#464b43");
+    ctx.fillStyle = g; ctx.fillRect(80, 30, 480, 200);                       // back wall
+    poly("#41463f", [0, 0], [80, 30], [80, 230], [0, 360]);                  // left wall
+    poly("#3b4039", [640, 0], [560, 30], [560, 230], [640, 360]);            // right wall
+    poly("#2e312c", [80, 230], [560, 230], [640, 360], [0, 360]);            // floor
+    ctx.fillStyle = "#7a8478"; ctx.fillRect(120, 70, 120, 86);               // window
+    ctx.fillStyle = "#545a51"; ctx.fillRect(178, 70, 4, 86); ctx.fillRect(120, 111, 120, 4);
+    ctx.fillStyle = "#2f342f"; ctx.fillRect(470, 100, 60, 130);              // door
+    ctx.fillStyle = "#5c625a"; ctx.fillRect(520, 168, 5, 5);
+    ctx.fillStyle = "#3a3530"; ctx.fillRect(230, 205, 150, 12);              // desk
+    ctx.fillRect(238, 217, 8, 50); ctx.fillRect(364, 217, 8, 50);
+    ctx.fillStyle = "#1f2220"; ctx.fillRect(282, 170, 52, 34); ctx.fillRect(304, 204, 8, 4); // monitor
+    ctx.fillStyle = "#33302b"; ctx.fillRect(408, 255, 44, 30);               // bin
+  }
+
+  function drawFire(dt) {
+    const f = intensity();
+    if (f > 0) {
+      acc += 110 * f * dt;
+      while (acc > 1) { acc--; flames.push({ x: OX + (Math.random() - .5) * 34 * f, y: OY - 18, vx: (Math.random() - .5) * 24, vy: -(60 + Math.random() * 90) * (0.7 + f * .5), l: 0, m: .45 + Math.random() * .6, r: (8 + Math.random() * 10) * (.6 + f * .6) }); }
+      sacc += 22 * f * dt;
+      while (sacc > 1) { sacc--; smokes.push({ x: OX + (Math.random() - .5) * 40, y: OY - 60 - 70 * f, vx: (Math.random() - .5) * 26, vy: -(25 + Math.random() * 25), l: 0, m: 3 + Math.random() * 2.5, r: 14 }); }
+    }
+    // glow on the walls
+    if (f > 0) {
+      const fl = .85 + Math.random() * .3;
+      const g = ctx.createRadialGradient(OX, OY - 40, 10, OX, OY - 40, 60 + 260 * f);
+      g.addColorStop(0, `rgba(255,150,50,${.45 * Math.min(f, 1) * fl})`); g.addColorStop(1, "rgba(255,120,40,0)");
+      ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    ctx.globalCompositeOperation = "lighter";
+    flames = flames.filter(p => (p.l += dt) < p.m);
+    for (const p of flames) {
+      p.x += p.vx * dt; p.y += p.vy * dt; const k = p.l / p.m, a = (1 - k) * .75;
+      ctx.fillStyle = k < .3 ? `rgba(255,236,170,${a})` : k < .6 ? `rgba(255,150,45,${a})` : `rgba(210,60,20,${a})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 - k * .6), 0, 7); ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    smokes = smokes.filter(p => (p.l += dt) < p.m);
+    for (const p of smokes) {
+      p.x += p.vx * dt; p.y = Math.max(20, p.y + p.vy * dt); const k = p.l / p.m;
+      ctx.fillStyle = `rgba(55,55,52,${.28 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r + 50 * k, 0, 7); ctx.fill();
+    }
+    if (f > 0) {                                     // smoke layer under the ceiling
+      const s = Math.min(1, (t - T.flame) / 12), g = ctx.createLinearGradient(0, 0, 0, 80 + 120 * s);
+      g.addColorStop(0, `rgba(30,30,28,${.7 * s})`); g.addColorStop(1, "rgba(30,30,28,0)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawVideo() {
+    if (video.readyState < 2) { ctx.fillStyle = "#111"; ctx.fillRect(0, 0, W, H); return; }
+    const vr = video.videoWidth / video.videoHeight, cr = W / H;
+    let sw = video.videoWidth, sh = video.videoHeight, sx = 0, sy = 0;
+    if (vr > cr) { sw = sh * cr; sx = (video.videoWidth - sw) / 2; } else { sh = sw / cr; sy = (video.videoHeight - sh) / 2; }
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+  }
+
+  function overlay() {
+    // grain + scanlines + vignette
+    const d = nimg.data; for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    nctx.putImageData(nimg, 0, 0);
+    ctx.globalAlpha = .07; ctx.drawImage(noise, 0, 0, W, H); ctx.globalAlpha = 1;
+    ctx.drawImage(scan, 0, 0);
+    const v = ctx.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * .95);
+    v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.55)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+
+    // detection box
+    const c = conf();
+    if (c > 0) {
+      let x0, y0, x1, y1;
+      if (useVideo) { x0 = W * .3; x1 = W * .7; y0 = H * .25; y1 = H * .85; }
+      else { const f = intensity(); x0 = OX - 40 - 30 * f; x1 = OX + 40 + 30 * f; y0 = OY - 70 - 120 * f; y1 = OY + 10; }
+      const col = t < T.confirm ? "#f5a524" : "#ff4d3d";
+      ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+      const label = `fire ${c.toFixed(2)}`;
+      ctx.font = "600 14px 'JetBrains Mono', Consolas, monospace";
+      const tw = ctx.measureText(label).width + 12;
+      ctx.fillStyle = col; ctx.fillRect(x0 - 1.25, y0 - 22, tw, 22);
+      ctx.fillStyle = t < T.confirm ? "#1a1205" : "#ffffff"; ctx.fillText(label, x0 + 5, y0 - 6);
+    }
+    // CCTV text
+    ctx.font = "600 13px 'JetBrains Mono', Consolas, monospace";
+    ctx.shadowColor = "rgba(0,0,0,.8)"; ctx.shadowBlur = 3; ctx.fillStyle = "#f2f2ee";
+    ctx.fillText("CAM-08  ROOM 208  FL 2", 14, 24);
+    const sec = 14 + Math.floor(t), stamp = `2026-11-20 14:32:${String(sec % 60).padStart(2, "0")}`;
+    ctx.fillText(useVideo ? `${stamp}  (your clip)` : stamp, W - ctx.measureText(useVideo ? `${stamp}  (your clip)` : stamp).width - 14, 24);
+    if (Math.floor(performance.now() / 600) % 2) { ctx.fillStyle = "#ff3b30"; ctx.beginPath(); ctx.arc(20, H - 20, 5, 0, 7); ctx.fill(); }
+    ctx.fillStyle = "#f2f2ee"; ctx.fillText("REC", 32, H - 15);
+    if (t >= T.confirm && Math.floor(performance.now() / 400) % 2) {
+      ctx.fillStyle = "#ff4d3d"; const s = "ALARM: FIRE"; ctx.fillText(s, W - ctx.measureText(s).width - 14, H - 15);
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // ---------- map + status ----------
+  const statusEl = $("status"), logEl = $("log");
+  function updateMap() {
+    let pos;
+    if (t < T.move) pos = A[0];
+    else if (t < T.confirm) pos = along(A, (t - T.move) * SPEED);
+    else pos = along(B, (t - T.confirm) * SPEED);
+    $("me").setAttribute("transform", `translate(${pos[0]} ${pos[1]})`);
+
+    const rA = $("routeA"), rB = $("routeB");
+    if (t < T.confirm) {
+      const idx = A.findIndex((q, i) => i > 0 && along(A, (Math.max(0, t - T.move)) * SPEED) && plen(A.slice(0, i + 1)) > (Math.max(0, t - T.move)) * SPEED);
+      rA.setAttribute("points", pts([pos, ...A.slice(Math.max(1, idx))]));
+      rA.setAttribute("stroke", "#5cc8ff"); rA.setAttribute("opacity", 1); rB.setAttribute("opacity", 0);
+      $("routeName").textContent = "→ East exit";
+    } else {
+      rA.setAttribute("points", pts([turn, A[3]]));
+      rA.setAttribute("stroke", "#ff4d3d"); rA.setAttribute("opacity", .55);
+      rB.setAttribute("points", pts(t < ARRIVE ? [pos, B[1]] : [B[1], B[1]]));
+      rB.setAttribute("opacity", 1);
+      $("routeName").textContent = t < ARRIVE ? "→ West exit (re-routed)" : "Safe at West exit";
+    }
+    const checking = t >= T.check && t < T.confirm, fire = t >= T.confirm;
+    $("checkMark").setAttribute("opacity", checking ? 1 : 0);
+    $("fireMark").setAttribute("opacity", fire ? 1 : 0);
+    $("blocked").setAttribute("opacity", fire ? .28 : 0);
+    $("r208").setAttribute("fill", fire ? "#3a1c1a" : checking ? "#3a2f17" : "#1a222c");
+    $("cam208").setAttribute("fill", fire ? "#ff4d3d" : checking ? "#f5a524" : "#8a98a8");
+    $("confTxt").textContent = `CAM-08 · ${conf().toFixed(2)}`;
+
+    let cls = "ok", txt = "Monitoring";
+    if (checking) { cls = "warn"; txt = "Checking CAM-08"; }
+    else if (fire && t < ARRIVE) { cls = "fire"; txt = "Fire detected · evacuating"; }
+    else if (fire) { cls = "fire"; txt = "Fire detected · person safe"; }
+    if (statusEl.textContent !== txt) { statusEl.textContent = txt; statusEl.className = "pill " + cls; }
+
+    while (logged < EVENTS.length && t >= EVENTS[logged].t) {
+      const e = EVENTS[logged++], li = document.createElement("li");
+      li.innerHTML = `<time>${fmt(e.t)}</time><span class="${e.c}"></span>`;
+      li.lastChild.textContent = e.m; logEl.append(li); logEl.scrollTop = logEl.scrollHeight;
+    }
+    $("clock").textContent = fmt(t);
+  }
+
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const sdt = playing ? dt * speed : 0;
+    t += sdt;
+    if (useVideo) drawVideo(); else { room(); drawFire(sdt); }
+    overlay(); updateMap();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- controls ----------
+  function replay() {
+    t = 0; logged = 0; flames = []; smokes = []; logEl.textContent = "";
+    if (useVideo) { video.currentTime = 0; if (playing) video.play().catch(() => {}); }
+  }
+  $("replay").onclick = replay;
+  $("play").onclick = () => {
+    playing = !playing; $("play").textContent = playing ? "Pause" : "Play";
+    if (useVideo) playing ? video.play().catch(() => {}) : video.pause();
+  };
+  $("speed").onclick = () => {
+    speed = speed === 1 ? 2 : 1; $("speed").textContent = `Speed ${speed}×`; video.playbackRate = speed;
+  };
+  $("clip").onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    video.src = URL.createObjectURL(file); video.playbackRate = speed; useVideo = true;
+    replay(); video.play().catch(() => {});
+  };
+
+  requestAnimationFrame(t0 => { last = t0; requestAnimationFrame(frame); });
+})();
+</script>
